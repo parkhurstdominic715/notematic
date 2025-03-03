@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,7 +42,7 @@
             background: #ffeb3b;
             padding: 15px;
             width: 250px;
-            height: 250px;
+            height: auto;
             margin: 10px;
             border-radius: 5px;
             box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
@@ -52,11 +51,22 @@
         }
         textarea {
             width: 100%;
-            height: 80%;
+            height: 80px;
             border: none;
             background: transparent;
             font-size: 14px;
             resize: none;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+        .tag {
+            background: #ccc;
+            border-radius: 3px;
+            padding: 3px 6px;
+            margin: 2px;
         }
         .delete {
             position: absolute;
@@ -191,13 +201,11 @@
             let username = $("#username").val();
             let email = $("#email").val();
             $("#settingsMessage").text(`Settings saved: ${username}, ${email}`);
-            // Here you could also save these settings in localStorage or send to a server
         });
 
         $("#loginSubmitBtn").click(function () {
             let username = $("#loginUsername").val();
             let password = $("#loginPassword").val();
-            // Here you would typically validate the login against a backend
             $("#loginMessage").text(`Logged in as ${username}`);
         });
 
@@ -205,38 +213,49 @@
             let username = $("#signupUsername").val();
             let email = $("#signupEmail").val();
             let password = $("#signupPassword").val();
-            // Here you would typically send the signup data to a backend
             $("#signupMessage").text(`Signed up as ${username}`);
         });
 
-        function addNote(text = "") {
+        function addNote(text = "", tags = []) {
             let note = $('<div class="note" draggable="true"></div>').draggable();
+            note.resizable({ minHeight: 100, minWidth: 100 });
 
             let textarea = $("<textarea></textarea>")
                 .val(text)
                 .on("input", saveNotes);
+
+            let tagInput = $('<input type="text" class="tagInput" placeholder="Add up to 5 tags (comma-separated)">');
+            let tagsDisplay = $('<div class="tags"></div>').append(tags.map(tag => $('<span class="tag"></span>').text(tag)));
 
             let deleteBtn = $('<button class="delete">❌</button>').click(function () {
                 note.remove();
                 saveNotes();
             });
 
-            note.append(textarea).append(deleteBtn);
+            tagInput.on("change", function () {
+                let newTags = tagInput.val().split(',').map(tag => tag.trim()).filter(tag => tag).slice(0, 5);
+                tagsDisplay.empty().append(newTags.map(tag => $('<span class="tag"></span>').text(tag)));
+                saveNotes();
+            });
+
+            note.append(textarea).append(tagInput).append(tagsDisplay).append(deleteBtn);
             $("#notesContainer").append(note);
             saveNotes();
         }
 
         function saveNotes() {
             let notes = [];
-            $(".note textarea").each(function () {
-                notes.push($(this).val());
+            $(".note").each(function () {
+                let text = $(this).find("textarea").val();
+                let tags = $(this).find(".tag").map(function() { return $(this).text(); }).get();
+                notes.push({ text, tags });
             });
             localStorage.setItem("stickyNotes", JSON.stringify(notes));
         }
 
         function loadNotes() {
             let notes = JSON.parse(localStorage.getItem("stickyNotes") || "[]");
-            notes.forEach(text => addNote(text));
+            notes.forEach(note => addNote(note.text, note.tags));
         }
     });
     </script>
